@@ -1,9 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import config from '../config/config';
 import { AppError } from './errorHandler';
 import { logger } from '../utils/logger';
 import { User } from '../types/auth';
+
+// Make sure we extend Express Request type
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User;
+    }
+  }
+}
 
 // Interface for JWT payload
 interface JWTPayload {

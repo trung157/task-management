@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { createVersionedRouter } from '../middleware/versioning/routerFactory';
 import { versionInfoMiddleware } from '../middleware/versioning/apiVersion';
 import configureV1Routes, { v1RouteConfigs } from './v1';
-import configureV2Routes, { v2RouteConfigs } from './v2';
 import { logger } from '../utils/logger';
 
 /**
@@ -19,12 +18,6 @@ export function createApiRouter(): Router {
   const v1Router = apiRouter.version('v1');
   configureV1Routes(v1Router);
   v1Router.addRoutes(v1RouteConfigs);
-  
-  // Configure V2 routes (enhanced features)
-  logger.info('Configuring API v2 routes...');
-  const v2Router = apiRouter.version('v2');
-  configureV2Routes(v2Router);
-  v2Router.addRoutes(v2RouteConfigs);
   
   // Add global routes that work across all versions
   logger.info('Configuring global API routes...');
@@ -48,7 +41,7 @@ export function createApiRouter(): Router {
           status: 'operational',
           timestamp: new Date().toISOString(),
           requestedVersion: req.apiVersion || 'v1',
-          availableVersions: ['v1', 'v2']
+          availableVersions: ['v1']
         },
         message: 'API is operational'
       });
@@ -58,10 +51,9 @@ export function createApiRouter(): Router {
   });
   
   logger.info('API routing configuration completed', {
-    versions: ['v1', 'v2'],
+    versions: ['v1'],
     features: {
-      v1: 'Legacy compatibility, core features',
-      v2: 'Enhanced features, bulk operations, analytics'
+      v1: 'Core features, task management, user authentication'
     }
   });
   

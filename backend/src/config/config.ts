@@ -1,5 +1,5 @@
-import dotenv from 'dotenv';
-import path from 'path';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
 // Load environment variables with explicit path
 const envPath = path.resolve(__dirname, '../../.env');

@@ -24,12 +24,9 @@ import { requestLogger } from '../middleware/security';
 
 // Route modules imports
 import configureV1Routes, { v1RouteConfigs } from './v1';
-import configureV2Routes, { v2RouteConfigs } from './v2';
-import configureV3Routes, { v3RouteConfigs } from './v3';
 
 // Feature-specific route imports
 import authRoutes from './auth';
-import userManagementRoutes from './userManagementRoutes';
 import taskRoutes from './tasks/taskRoutes';
 // Note: Other route modules will be added as they are implemented
 // import projectRoutes from './projects/projectRoutes';
@@ -134,20 +131,10 @@ export class TaskManagementRouter {
   private setupVersionedRoutes(): void {
     logger.info('🔄 Setting up versioned API routes...');
 
-    // Configure V1 routes (Legacy + Stable)
+    // Configure V1 routes (Stable)
     const v1Router = this.versionedRouter.version('v1');
     configureV1Routes(v1Router);
     v1Router.addRoutes(v1RouteConfigs);
-
-    // Configure V2 routes (Enhanced Features)
-    const v2Router = this.versionedRouter.version('v2');
-    configureV2Routes(v2Router);
-    v2Router.addRoutes(v2RouteConfigs);
-
-    // Configure V3 routes (Latest Features)
-    const v3Router = this.versionedRouter.version('v3');
-    configureV3Routes(v3Router);
-    v3Router.addRoutes(v3RouteConfigs);
 
     // Mount versioned routes
     this.app.use('/api', this.versionedRouter.getRouter());
@@ -170,13 +157,6 @@ export class TaskManagementRouter {
         description: 'Authentication and authorization',
         auth: false,
         rateLimit: authLimiter
-      },
-      {
-        path: '/users',
-        router: userManagementRoutes,
-        middleware: [jwtAuth],
-        description: 'User management and profiles',
-        auth: true
       },
       {
         path: '/tasks',
@@ -252,7 +232,6 @@ export class TaskManagementRouter {
     // Legacy route mappings (without version prefix)
     const legacyMappings = [
       { path: '/auth', target: authRoutes },
-      { path: '/users', target: userManagementRoutes },
       { path: '/tasks', target: taskRoutes }
       // { path: '/notifications', target: notificationRoutes }
     ];

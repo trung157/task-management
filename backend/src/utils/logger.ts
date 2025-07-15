@@ -1,6 +1,6 @@
 import winston from 'winston'
-import path from 'path'
-import fs from 'fs'
+import * as path from 'path'
+import * as fs from 'fs'
 import DailyRotateFile from 'winston-daily-rotate-file'
 
 // Ensure logs directory exists
