@@ -1,0 +1,58 @@
+{
+  "name": "performance-optimization-dependencies",
+  "description": "Required dependencies for performance optimizations",
+  "backend": {
+    "dependencies": {
+      "ioredis": "^5.3.2",
+      "compression": "^1.7.4",
+      "helmet": "^7.1.0",
+      "express-rate-limit": "^7.1.5"
+    },
+    "devDependencies": {
+      "@types/ioredis": "^5.0.0",
+      "@types/compression": "^1.7.5"
+    },
+    "scripts": {
+      "db:migrate:performance": "psql $DATABASE_URL -f database/migrations/performance_indexes.sql",
+      "performance:test": "node scripts/performance-test.js",
+      "cache:warm": "node scripts/warm-cache.js"
+    }
+  },
+  "frontend": {
+    "dependencies": {
+      "@tanstack/react-query": "^5.8.4",
+      "use-debounce": "^10.0.0",
+      "react-window": "^1.8.8",
+      "react-virtualized-auto-sizer": "^1.0.20",
+      "web-vitals": "^3.5.0"
+    },
+    "devDependencies": {
+      "@types/react-window": "^1.8.8"
+    },
+    "scripts": {
+      "analyze": "npm run build && npx webpack-bundle-analyzer build/static/js/*.js",
+      "performance:audit": "lighthouse-ci autorun"
+    }
+  },
+  "installation_commands": {
+    "backend": [
+      "cd backend",
+      "npm install ioredis @types/ioredis compression @types/compression helmet express-rate-limit"
+    ],
+    "frontend": [
+      "cd frontend", 
+      "npm install @tanstack/react-query use-debounce react-window @types/react-window react-virtualized-auto-sizer web-vitals"
+    ]
+  },
+  "optional_tools": {
+    "monitoring": [
+      "npm install --save-dev clinic",
+      "npm install --save-dev autocannon",
+      "npm install --save-dev lighthouse-ci"
+    ],
+    "testing": [
+      "npm install --save-dev @testing-library/react-hooks",
+      "npm install --save-dev jest-performance-testing"
+    ]
+  }
+}

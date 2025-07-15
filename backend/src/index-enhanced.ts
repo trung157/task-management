@@ -49,13 +49,13 @@ async function initializeApplication(): Promise<void> {
       security: {
         cors: {
           enabled: true,
-          origins: config.cors?.origins || ['http://localhost:3000'],
+          origins: config.server.corsOrigin as string[] || ['http://localhost:3000'],
           credentials: true
         },
         rateLimiting: {
           enabled: true,
           windowMs: 15 * 60 * 1000, // 15 minutes
-          maxRequests: config.rateLimiting?.maxRequests || 1000
+          maxRequests: config.rateLimiting?.max || 1000
         },
         helmet: {
           enabled: true
@@ -208,7 +208,7 @@ process.on('uncaughtException', (error) => {
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+  logger.error('💥 Unhandled Rejection at:', { promise, reason });
   process.exit(1);
 });
 

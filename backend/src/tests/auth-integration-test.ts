@@ -5,7 +5,7 @@
  */
 
 import { ModernAuthController } from '../controllers/modernAuthController';
-import modernAuthRoutes from '../routes/modernAuth';
+import modernAuthRoutes from '../routes/authRoutes';
 import { 
   validateRegistration, 
   validateLogin, 

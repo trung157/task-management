@@ -111,7 +111,7 @@ class MonitoringService {
           overallStatus = 'degraded'
         }
 
-        logger.logHealthCheck(name, result.status, result.details)
+        logger.logHealthCheck(name, result.status === 'degraded' ? 'unhealthy' : result.status, result.details)
       } catch (error) {
         const errorResult: HealthCheckResult = {
           service: name,

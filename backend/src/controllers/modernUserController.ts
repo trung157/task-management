@@ -121,10 +121,8 @@ export const userValidationRules = {
 // =====================================================
 
 export class ModernUserController {
-  private userService: AdvancedUserService;
-
   constructor() {
-    this.userService = new AdvancedUserService();
+    // AdvancedUserService is a static class, no instantiation needed
   }
 
   // =====================================================
@@ -142,15 +140,16 @@ export class ModernUserController {
         throw new AppError('Validation failed', 400, 'VALIDATION_ERROR', errors.array());
       }
 
-      const { email, password, first_name, last_name, timezone, language_code } = req.body;
+      const { email, password, first_name, last_name, timezone, language_code, terms_accepted = true } = req.body;
 
-      const result = await this.userService.registerUser({
+      const result = await AdvancedUserService.registerUser({
         email,
         password,
         first_name,
         last_name,
         timezone,
         language_code,
+        terms_accepted,
       });
 
       logger.info('User registered successfully', {
@@ -181,7 +180,7 @@ export class ModernUserController {
 
       const { email, password, captcha_token, remember_me } = req.body;
 
-      const result = await this.userService.authenticateUser({
+      const result = await AdvancedUserService.authenticateUser({
         email,
         password,
         ip_address: req.ip,
@@ -217,7 +216,7 @@ export class ModernUserController {
         throw new AppError('Refresh token is required', 400, 'MISSING_REFRESH_TOKEN');
       }
 
-      const result = await this.userService.refreshAccessToken(refresh_token);
+      const result = await AdvancedUserService.refreshAccessToken(refresh_token);
 
       res.json({
         success: true,
@@ -237,7 +236,7 @@ export class ModernUserController {
       const { refresh_token } = req.body;
 
       if (req.user?.id) {
-        await this.userService.logoutUser(req.user.id, refresh_token);
+        await AdvancedUserService.logoutUser(req.user.id, refresh_token);
       }
 
       res.json({
@@ -262,7 +261,7 @@ export class ModernUserController {
         throw new AppError('User not authenticated', 401, 'UNAUTHORIZED');
       }
 
-      const user = await this.userService.getUserById(req.user.id);
+      const user = await AdvancedUserService.getUserById(req.user.id);
 
       res.json({
         success: true,
@@ -288,7 +287,7 @@ export class ModernUserController {
       }
 
       const updateData = req.body;
-      const updatedUser = await this.userService.updateUserProfile(req.user.id, updateData);
+      const updatedUser = await AdvancedUserService.updateUserProfile(req.user.id, updateData);
 
       logger.info('User profile updated', {
         userId: req.user.id,
@@ -321,10 +320,7 @@ export class ModernUserController {
 
       const { current_password, new_password } = req.body;
 
-      await this.userService.changePassword(req.user.id, {
-        current_password,
-        new_password,
-      });
+      await AdvancedUserService.changePassword(req.user.id, current_password, new_password, req.ip, req.get('User-Agent'));
 
       logger.info('User password changed', {
         userId: req.user.id,
@@ -356,7 +352,7 @@ export class ModernUserController {
 
       const { email, captcha_token } = req.body;
 
-      await this.userService.requestPasswordReset(email, {
+      await AdvancedUserService.requestPasswordReset(email, {
         ip_address: req.ip,
         user_agent: req.get('User-Agent'),
         captcha_token,
@@ -383,7 +379,7 @@ export class ModernUserController {
 
       const { token, new_password } = req.body;
 
-      await this.userService.resetPassword(token, new_password, {
+      await AdvancedUserService.resetPassword(token, new_password, {
         ip_address: req.ip,
         user_agent: req.get('User-Agent'),
       });
@@ -437,7 +433,7 @@ export class ModernUserController {
         sortOrder: (query.sortOrder || 'desc') as 'asc' | 'desc',
       };
 
-      const result = await this.userService.searchUsers(filters, pagination);
+      const result = await AdvancedUserService.searchUsers(filters, pagination);
 
       res.json({
         success: true,
@@ -458,7 +454,7 @@ export class ModernUserController {
       }
 
       const { userId } = req.params;
-      const user = await this.userService.getUserById(userId);
+      const user = await AdvancedUserService.getUserById(userId);
 
       res.json({
         success: true,
@@ -486,7 +482,7 @@ export class ModernUserController {
       const { userId } = req.params;
       const { role, reason } = req.body;
 
-      const updatedUser = await this.userService.updateUserRole(userId, role, {
+      const updatedUser = await AdvancedUserService.updateUserRole(userId, role, {
         changed_by: req.user.id,
         reason,
       });
@@ -520,7 +516,7 @@ export class ModernUserController {
       const { userId } = req.params;
       const { reason, duration_hours } = req.body;
 
-      await this.userService.suspendUser(userId, {
+      await AdvancedUserService.suspendUser(userId, {
         suspended_by: req.user.id,
         reason,
         duration_hours,
@@ -551,9 +547,17 @@ export class ModernUserController {
    */
   public verifyEmail = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { token } = req.params;
+      const { token, email } = req.body;
 
-      await this.userService.verifyEmail(token);
+      if (!token) {
+        throw new AppError('Verification token is required', 400, 'TOKEN_REQUIRED');
+      }
+
+      if (!email) {
+        throw new AppError('Email is required', 400, 'EMAIL_REQUIRED');
+      }
+
+      await AdvancedUserService.verifyEmail(email, token);
 
       res.json({
         success: true,
@@ -573,7 +577,7 @@ export class ModernUserController {
         throw new AppError('User not authenticated', 401, 'UNAUTHORIZED');
       }
 
-      await this.userService.resendEmailVerification(req.user.id);
+      await AdvancedUserService.resendEmailVerification(req.user.id);
 
       res.json({
         success: true,

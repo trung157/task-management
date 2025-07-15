@@ -4,10 +4,7 @@ import { VersionedRouter, VersionedRouteConfig } from '../../middleware/versioni
 // Import V1 route handlers
 import authRoutes from './authRoutes';
 import userRoutes from './userRoutes';
-import modernUserRoutes from '../modernUsers'; // Modern user service routes
 import taskRoutes from '../tasks'; // Using new repository-based task routes
-import modernTaskRoutes from '../modernTasks'; // Modern task controller with validation
-import enhancedTaskRoutes from '../enhancedTasks'; // Enhanced task controller with advanced features
 import tagRoutes from './tagRoutes';
 import notificationRoutes from './notificationRoutes';
 import advancedNotificationRoutes from '../advancedTaskNotifications'; // Advanced notification routes
@@ -27,18 +24,9 @@ export function configureV1Routes(versionedRouter: VersionedRouter): VersionedRo
   // V1 User management routes (auth required)
   router.use('/users', userRoutes);
   
-  // V1 Modern User management routes with advanced features (auth required)
-  router.use('/users-v2', modernUserRoutes);
-  
   // V1 Task management routes (auth required)
   // Using new repository pattern for better performance and maintainability
   router.use('/tasks', taskRoutes);
-  
-  // V1 Modern Task management routes with comprehensive validation and error handling
-  router.use('/tasks-v2', modernTaskRoutes);
-  
-  // V1 Enhanced Task management routes with advanced features and analytics
-  router.use('/tasks-enhanced', enhancedTaskRoutes);
   
   // V1 Tag management routes (auth required)
   router.use('/tags', tagRoutes);

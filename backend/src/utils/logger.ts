@@ -113,8 +113,7 @@ transports.push(
     maxSize: '20m',
     maxFiles: '7d',
     level: 'info',
-    format: logFormat,
-    filter: (info: any) => info.type === 'performance'
+    format: logFormat
   }),
 
   // Security audit logs
@@ -125,8 +124,7 @@ transports.push(
     maxSize: '20m',
     maxFiles: '30d',
     level: 'info',
-    format: logFormat,
-    filter: (info: any) => info.type === 'security'
+    format: logFormat
   })
 )
 

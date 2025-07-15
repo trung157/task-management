@@ -10,14 +10,14 @@
  * - Documentation integration
  */
 
-import { Router, Application } from 'express';
+import { Router, Application, Request, Response } from 'express';
 import { logger } from '../utils/logger';
 import { createVersionedRouter } from '../middleware/versioning/routerFactory';
 import { versionInfoMiddleware } from '../middleware/versioning/apiVersion';
 
 // Core middleware imports
 import { jwtAuth, optionalAuth } from '../middleware/jwtAuth';
-import { defaultLimiter, authLimiter, apiLimiter } from '../middleware/rateLimiting';
+import { defaultLimiter, authLimiter } from '../middleware/rateLimiting';
 import { validateRequest } from '../middleware/validation';
 import { errorHandler, notFoundHandler } from '../middleware/errorHandler';
 import { requestLogger } from '../middleware/security';
@@ -31,12 +31,13 @@ import configureV3Routes, { v3RouteConfigs } from './v3';
 import authRoutes from './auth';
 import userManagementRoutes from './userManagementRoutes';
 import taskRoutes from './tasks/taskRoutes';
-import projectRoutes from './projects/projectRoutes';
-import teamRoutes from './teams/teamRoutes';
-import notificationRoutes from './notifications/notificationRoutes';
-import analyticsRoutes from './analytics/analyticsRoutes';
-import adminRoutes from './admin/adminRoutes';
-import webhookRoutes from './webhooks/webhookRoutes';
+// Note: Other route modules will be added as they are implemented
+// import projectRoutes from './projects/projectRoutes';
+// import teamRoutes from './teams/teamRoutes';
+// import notificationRoutes from './notifications/notificationRoutes';
+// import analyticsRoutes from './analytics/analyticsRoutes';
+// import adminRoutes from './admin/adminRoutes';
+// import webhookRoutes from './webhooks/webhookRoutes';
 
 export interface RouteModule {
   path: string;
@@ -183,7 +184,7 @@ export class TaskManagementRouter {
         middleware: [jwtAuth],
         description: 'Task management and operations',
         auth: true
-      },
+      }/*,
       {
         path: '/projects',
         router: projectRoutes,
@@ -208,10 +209,10 @@ export class TaskManagementRouter {
       {
         path: '/analytics',
         router: analyticsRoutes,
-        middleware: [jwtAuth, apiLimiter],
+        middleware: [jwtAuth, defaultLimiter],
         description: 'Analytics and reporting',
         auth: true,
-        rateLimit: apiLimiter
+        rateLimit: defaultLimiter
       },
       {
         path: '/webhooks',
@@ -219,7 +220,7 @@ export class TaskManagementRouter {
         middleware: [optionalAuth],
         description: 'Webhook integrations',
         auth: false
-      }
+      }*/
     ];
 
     // Mount each feature route module
@@ -252,8 +253,8 @@ export class TaskManagementRouter {
     const legacyMappings = [
       { path: '/auth', target: authRoutes },
       { path: '/users', target: userManagementRoutes },
-      { path: '/tasks', target: taskRoutes },
-      { path: '/notifications', target: notificationRoutes }
+      { path: '/tasks', target: taskRoutes }
+      // { path: '/notifications', target: notificationRoutes }
     ];
 
     legacyMappings.forEach(mapping => {
@@ -272,12 +273,14 @@ export class TaskManagementRouter {
   private setupAdminRoutes(): void {
     logger.info('👑 Setting up admin and monitoring routes...');
 
-    // Admin routes with enhanced security
+    // Admin routes with enhanced security (commented out until implemented)
+    /*
     this.app.use('/api/admin', 
       authLimiter,
       jwtAuth,
       adminRoutes
     );
+    */
 
     // System monitoring endpoints
     this.setupMonitoringEndpoints();
@@ -369,7 +372,7 @@ export class TaskManagementRouter {
     // Metrics endpoint (admin only)
     this.app.get('/api/metrics',
       jwtAuth,
-      (req, res) => {
+      (req: Request, res: Response) => {
         res.json({
           success: true,
           data: {

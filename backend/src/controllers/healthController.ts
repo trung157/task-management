@@ -4,6 +4,9 @@ import { logger } from '../utils/logger'
 import PerformanceMonitoringMiddleware from '../middleware/performanceMonitoring'
 import { performance } from 'perf_hooks'
 import os from 'os'
+import config from '../config/config'
+import pool from '../db'
+import { HealthCheck, ServiceHealth } from '../types/health'
 
 class HealthController {
   /**
@@ -314,23 +317,6 @@ export const getHealthDetailed = HealthController.healthDetailed
 export const getLiveness = HealthController.liveness
 export const getReadiness = HealthController.readiness
 export const getMetrics = HealthController.metrics
-      .every(service => service.status === 'healthy');
-
-    if (!servicesHealthy) {
-      healthCheck.status = 'unhealthy';
-    }
-
-    const statusCode = healthCheck.status === 'healthy' ? 200 : 503;
-    res.status(statusCode).json(healthCheck);
-  } catch (error) {
-    logger.error('Health check failed:', error);
-    res.status(503).json({
-      status: 'unhealthy',
-      timestamp: new Date().toISOString(),
-      error: 'Health check failed'
-    });
-  }
-};
 
 /**
  * Detailed health check with more comprehensive service checks
@@ -348,10 +334,11 @@ export const getDetailedHealth = async (req: Request, res: Response): Promise<vo
       uptime: process.uptime(),
       environment: config.server.env,
       version: process.env.npm_package_version || '1.0.0',
-      services: {
-        database: await checkDatabase(),
-        memory: checkMemory()
-      },
+      services: [
+        await checkDatabase(),
+        await checkRedis(),
+        checkMemory()
+      ],
       details: {
         nodeVersion: process.version,
         platform: process.platform,
@@ -375,8 +362,7 @@ export const getDetailedHealth = async (req: Request, res: Response): Promise<vo
     healthCheck.performance.responseTime = Date.now() - startTime;
 
     // Check if any service is unhealthy
-    const servicesHealthy = Object.values(healthCheck.services)
-      .every(service => service.status === 'healthy');
+    const servicesHealthy = healthCheck.services?.every((service: ServiceHealth) => service.status === 'healthy') ?? true;
 
     if (!servicesHealthy) {
       healthCheck.status = 'unhealthy';
@@ -447,6 +433,7 @@ async function checkDatabase(): Promise<ServiceHealth> {
     const responseTime = Date.now() - startTime;
 
     return {
+      name: 'database',
       status: 'healthy',
       responseTime,
       details: {
@@ -459,6 +446,7 @@ async function checkDatabase(): Promise<ServiceHealth> {
     };
   } catch (error) {
     return {
+      name: 'database',
       status: 'unhealthy',
       error: error instanceof Error ? error.message : 'Database connection failed'
     };
@@ -473,6 +461,7 @@ async function checkRedis(): Promise<ServiceHealth> {
     // Note: This would need Redis client implementation
     // For now, return a placeholder
     return {
+      name: 'redis',
       status: 'healthy',
       responseTime: 0,
       details: {
@@ -481,6 +470,7 @@ async function checkRedis(): Promise<ServiceHealth> {
     };
   } catch (error) {
     return {
+      name: 'redis',
       status: 'unhealthy',
       error: error instanceof Error ? error.message : 'Redis connection failed'
     };
@@ -501,6 +491,7 @@ function checkMemory(): ServiceHealth {
   const isHealthy = memoryUsagePercent < 90;
 
   return {
+    name: 'memory',
     status: isHealthy ? 'healthy' : 'unhealthy',
     details: {
       heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024),

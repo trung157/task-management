@@ -9,11 +9,6 @@ declare global {
     interface Request {
       requestId: string
       startTime: number
-      user?: {
-        id: string
-        email: string
-        role?: string
-      }
     }
   }
 }
@@ -140,8 +135,8 @@ class LoggingMiddleware {
         logger.warn('Slow request detected', performanceData)
       }
 
-      // Emit performance metrics for monitoring
-      process.emit('performance-metric', performanceData)
+      // Log performance metrics for monitoring
+      logger.info('Performance metric', { type: 'performance', ...performanceData })
     })
 
     next()

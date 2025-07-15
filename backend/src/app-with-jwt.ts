@@ -17,7 +17,7 @@ import {
   authRateLimit 
 } from './middleware/jwtAuth';
 import { errorHandler } from './middleware/errorHandler';
-import authRoutes from './routes/auth-examples';
+import authRoutes from './routes/authRoutes';
 import { logger } from './utils/logger';
 
 // Create Express app

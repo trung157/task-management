@@ -14,6 +14,8 @@ import { connectDatabase } from './db';
 import { logger } from './utils/logger';
 import { checkDatabaseHealth } from './utils/database-health';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { userFriendlyErrorHandler } from './middleware/enhancedErrorHandler';
+import { enhancedErrorHandler, errorMonitoringMiddleware } from './middleware/errorRecoveryHandler';
 import { 
   SecurityHeaders, 
   requestLogger,
@@ -71,6 +73,11 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // =====================================================
+// ERROR MONITORING
+// =====================================================
+app.use(errorMonitoringMiddleware);
+
+// =====================================================
 // GLOBAL HEALTH CHECK
 // =====================================================
 app.get('/health', async (req, res) => {
@@ -123,8 +130,9 @@ setupRoutes(app);
 // 404 handler for unmatched routes
 app.use('*', notFoundHandler);
 
-// Global error handler
-app.use(errorHandler);
+// Enhanced error handlers with recovery mechanisms
+app.use(enhancedErrorHandler);
+app.use(userFriendlyErrorHandler);
 
 // =====================================================
 // SERVER STARTUP
@@ -180,7 +188,7 @@ async function startServer(): Promise<void> {
     });
 
     process.on('unhandledRejection', (reason, promise) => {
-      logger.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+      logger.error('💥 Unhandled Rejection at:', { promise, reason });
       process.exit(1);
     });
 

@@ -306,11 +306,11 @@ export class TaskService {
     let confidence = 0.7;
 
     if (dueAnalysis.isOverdue) {
-      recommended = 'critical';
+      recommended = 'high';
       reason = 'Task is overdue and needs immediate attention';
       confidence = 0.95;
-    } else if (dueAnalysis.urgencyLevel === 'critical' && task.priority !== 'critical') {
-      recommended = 'critical';
+    } else if (dueAnalysis.urgencyLevel === 'critical' && task.priority !== 'high') {
+      recommended = 'high';
       reason = 'Due date is very soon';
       confidence = 0.9;
     } else if (dueAnalysis.urgencyLevel === 'high' && ['low', 'none'].includes(task.priority)) {
@@ -379,7 +379,7 @@ export class TaskService {
   async getTasksRequiringAttention(userId: string) {
     try {
       const tasks = await this.searchTasks(userId, {
-        status: ['pending', 'in_progress', 'blocked'],
+        status: ['pending', 'in_progress'],
         include_archived: false
       });
 
@@ -431,7 +431,7 @@ export class TaskService {
   async suggestDueDates(userId: string): Promise<Array<{taskId: string, suggestedDate: Date, reason: string}>> {
     try {
       const tasks = await this.searchTasks(userId, {
-        due_date: null,
+        has_due_date: false, // Tasks without due dates
         status: ['pending', 'in_progress'],
         include_archived: false
       });
@@ -596,12 +596,12 @@ export class TaskService {
     }
 
     // Time validation
-    if (taskData.estimated_hours && taskData.estimated_hours < 0) {
-      throw new AppError('Estimated hours cannot be negative', 400);
+    if (taskData.estimated_minutes && taskData.estimated_minutes < 0) {
+      throw new AppError('Estimated minutes cannot be negative', 400);
     }
 
-    if (taskData.estimated_hours && taskData.estimated_hours > 1000) {
-      throw new AppError('Estimated hours seems unrealistic (max 1000 hours)', 400);
+    if (taskData.estimated_minutes && taskData.estimated_minutes > 60000) {
+      throw new AppError('Estimated minutes seems unrealistic (max 60000 minutes)', 400);
     }
   }
 
@@ -618,10 +618,10 @@ export class TaskService {
       await this.validateTaskData({
         title: updateData.title || existingTask.title,
         description: updateData.description,
-        due_date: updateData.due_date,
+        due_date: updateData.due_date || undefined,
         tags: updateData.tags,
         priority: updateData.priority,
-        estimated_hours: updateData.estimated_hours
+        estimated_minutes: updateData.estimated_minutes || undefined
       }, options);
     }
 
@@ -638,8 +638,8 @@ export class TaskService {
 
     // Completion validation
     if (updateData.status === 'completed') {
-      if (existingTask.status === 'draft') {
-        throw new AppError('Cannot complete a draft task without starting it first', 400);
+      if (existingTask.status === 'pending') {
+        throw new AppError('Cannot complete a pending task without starting it first', 400);
       }
     }
 
@@ -661,7 +661,7 @@ export class TaskService {
 
     // Set defaults
     enriched.priority = enriched.priority || 'medium';
-    enriched.status = enriched.status || 'draft';
+    enriched.status = enriched.status || 'pending';
     enriched.tags = enriched.tags || [];
     enriched.metadata = enriched.metadata || {};
 
@@ -692,14 +692,14 @@ export class TaskService {
     // Auto-set completion data
     if (processed.status === 'completed' && existingTask.status !== 'completed') {
       processed.completed_at = processed.completed_at || new Date();
-      processed.completion_percentage = 100;
+      // Note: completion_percentage field doesn't exist in current model
     }
 
     // Clear completion data if moving away from completed
     if (existingTask.status === 'completed' && processed.status && processed.status !== 'completed') {
       processed.completed_at = null;
       processed.completed_by = null;
-      processed.completion_percentage = processed.completion_percentage || 0;
+      // Note: completion_percentage field doesn't exist in current model
     }
 
     // Update reminder if due date changed
@@ -778,7 +778,7 @@ export class TaskService {
       taskId: task.id,
       priority: task.priority,
       hasDueDate: !!task.due_date,
-      estimatedHours: task.estimated_hours
+      estimatedMinutes: task.estimated_minutes
     });
 
     // Could add: notification scheduling, webhook calls, etc.
