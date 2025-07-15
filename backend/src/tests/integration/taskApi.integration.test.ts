@@ -7,7 +7,7 @@
 
 import request from 'supertest';
 import { Pool, PoolClient } from 'pg';
-import app from '../../app';
+import { app } from '../../index';
 import { connectDatabase, closeDatabase } from '../../db';
 import { User } from '../../models/user';
 import { Task, TaskPriority, TaskStatus } from '../../models/task';

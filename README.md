@@ -1,53 +1,247 @@
-# 🚀 TaskFlow - Modern Task Management App
+# 🚀 TaskFlow - Full-Stack Task Management System
 
-<div align="center">
-  <img src="public/vite.svg" alt="TaskFlow Logo" width="120" height="120">
+<## 🚀 **Quick Start**
+
+### Step 1: Check System Requirements
+
+Before starting, run the requirements check script:
+
+```bash
+# Windows
+check-requirements.bat
+
+# Linux/macOS  
+chmod +x check-requirements.sh
+./check-requirements.sh
+```
+
+This will verify that you have all necessary tools installed.
+
+### Step 2: Prerequisites align="center">
   
-  **A beautiful, modern task management application built with React, TypeScript, and Tailwind CSS**
+  **A modern, scalable task management platform built with React, Node.js, TypeScript, and PostgreSQL**
   
   [![React](https://img.shields.io/badge/React-18+-blue.svg)](https://reactjs.org/)
+  [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
-  [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3.0+-blue.svg)](https://tailwindcss.com/)
-  [![Vite](https://img.shields.io/badge/Vite-5.0+-purple.svg)](https://vitejs.dev/)
+  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-blue.svg)](https://postgresql.org/)
+  [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://docker.com/)
+  [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 </div>
 
-## ✨ Features
+## �️ **Project Structure**
 
-### 🎨 **Beautiful Modern UI**
-- **Glassmorphism Design**: Stunning glass-like components with backdrop blur effects
-- **Gradient Backgrounds**: Eye-catching animated gradient backgrounds
-- **Dark Theme**: Optimized for low-light environments
-- **Responsive Design**: Perfect on desktop, tablet, and mobile devices
-- **Micro-interactions**: Smooth animations and hover effects
+This is a monorepo containing both frontend and backend applications:
 
-### 📋 **Smart Task Management**
-- **Create & Edit Tasks**: Intuitive form with validation
-- **Priority Levels**: High, Medium, Low priority with visual indicators
-- **Due Dates**: Date picker with overdue highlighting
-- **Status Tracking**: Pending and Completed task sections
-- **Search & Filter**: Real-time search with multiple filter options
-- **Progress Analytics**: Visual progress tracking and statistics
+```
+task-management/
+├── 📁 frontend/          # React + TypeScript frontend
+├── 📁 backend/           # Node.js + Express API
+├── 📁 docs/              # Documentation files
+├── 🐳 docker-compose.yml # Multi-service container setup
+├── 📋 package.json       # Workspace configuration
+└── 📖 README.md          # This file
+```
 
-### 🔍 **Advanced Filtering**
-- **Text Search**: Search by title, description, or tags
-- **Status Filter**: All, Pending, Completed
-- **Priority Filter**: Filter by priority levels
-- **Active Filter Display**: See all applied filters at a glance
-- **One-click Clear**: Reset all filters instantly
+## ✨ **Key Features**
 
-### 📱 **Mobile-First Design**
-- **Touch-Friendly**: Large touch targets for mobile devices
-- **Responsive Grid**: Adapts from 1-column to 4-column layout
-- **Mobile Sidebar**: Collapsible sidebar for small screens
-- **Swipe Gestures**: (Future enhancement)
+### 🎯 **Core Functionality**
+- **Task Management**: Create, edit, delete, and organize tasks
+- **User Authentication**: JWT-based secure authentication
+- **Real-time Updates**: Live task updates across sessions
+- **Priority Management**: High, Medium, Low priority levels
+- **Status Tracking**: Pending, In Progress, Completed states
+- **Due Date Management**: Calendar integration with notifications
 
-## 🏗️ Architecture & Best Practices
+### 🔐 **Security & Performance**
+- **JWT Authentication**: Secure token-based authentication
+- **Rate Limiting**: API protection against abuse
+- **Input Validation**: Comprehensive data validation
+- **SQL Injection Protection**: Parameterized queries
+- **CORS Configuration**: Secure cross-origin requests
+- **Caching**: Redis caching for improved performance
 
-### **International UI/UX Standards**
-- **Left-to-Right Layout**: Sidebar → Main Content → Secondary Content
-- **F-Pattern Design**: Natural reading flow optimization
-- **Consistent Navigation**: Predictable interface patterns
-- **Accessibility First**: WCAG 2.1 compliance with focus management
+### 📊 **Advanced Features**
+- **Search & Filter**: Advanced filtering and search capabilities
+- **Bulk Operations**: Multi-task operations
+- **Analytics**: Task completion metrics and insights
+- **File Uploads**: Task attachment support
+- **Email Notifications**: Automated task reminders
+- **API Versioning**: Future-proof API design
+
+## � **Quick Start**
+
+### Prerequisites
+- **Node.js** 18.0.0 or higher ([Download here](https://nodejs.org/))
+- **PostgreSQL** 15 or higher
+- **Redis** (for caching)
+- **Docker** (optional, for containerized setup)
+
+> ⚠️ **Important**: If you get "npm is not recognized" error, please follow the [Installation Guide](./INSTALL.md) first.
+
+### 🐳 **Docker Setup (Recommended)**
+
+1. **Install Prerequisites:**
+   - Install [Node.js](https://nodejs.org/) (required for development)
+   - Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+
+2. **Clone the repository**
+   ```bash
+   git clone https://github.com/trung157/task-management.git
+   cd task-management
+   ```
+
+3. **Environment Setup**
+   ```bash
+   # Windows
+   copy "backend\.env.example" "backend\.env"
+   
+   # Linux/macOS
+   cp backend/.env.example backend/.env
+   
+   # Edit backend/.env with your configuration
+   ```
+
+4. **Start with Docker**
+   ```bash
+   docker-compose up -d
+   ```
+
+4. **Access the Application**
+   - Frontend: http://localhost:8080
+   - Backend API: http://localhost:3000
+   - API Documentation: http://localhost:3000/docs
+
+### 💻 **Local Development Setup**
+
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+2. **Setup Database**
+   ```bash
+   # Start PostgreSQL and Redis
+   # Create database: taskflow_db
+   ```
+
+3. **Configure Environment**
+   ```bash
+   cd backend
+   cp .env.example .env
+   # Edit .env file with your database credentials
+   ```
+
+4. **Run Database Migrations**
+   ```bash
+   npm run db:migrate
+   ```
+
+5. **Start Development Servers**
+   ```bash
+   # Start both frontend and backend
+   npm run dev
+   
+   # Or start individually
+   npm run dev:backend   # Backend on port 3000
+   npm run dev:frontend  # Frontend on port 5173
+   ```
+
+## 📁 **Technology Stack**
+
+### **Frontend**
+- **React 18** - Modern React with hooks
+- **TypeScript** - Type-safe development
+- **Vite** - Fast build tool and dev server
+- **Tailwind CSS** - Utility-first CSS framework
+- **React Query** - Server state management
+- **React Router** - Client-side routing
+- **Framer Motion** - Animation library
+
+### **Backend**
+- **Node.js** - JavaScript runtime
+- **Express.js** - Web application framework
+- **TypeScript** - Type-safe server development
+- **PostgreSQL** - Primary database
+- **Redis** - Caching and session storage
+- **JWT** - Authentication tokens
+- **Winston** - Logging framework
+
+### **DevOps & Tools**
+- **Docker** - Containerization
+- **Jest** - Testing framework
+- **ESLint** - Code linting
+- **Prettier** - Code formatting
+- **GitHub Actions** - CI/CD pipeline
+
+## 📚 **Documentation**
+
+- [Frontend Documentation](./frontend/README.md)
+- [Backend API Documentation](./backend/README.md)
+- [API Reference](./backend/openapi.yaml)
+- [Environment Setup](./backend/ENVIRONMENT_SETUP_GUIDE.md)
+- [Database Schema](./backend/DATABASE_SETUP.md)
+
+## 🧪 **Testing**
+
+```bash
+# Run all tests
+npm run test
+
+# Backend tests
+npm run test:backend
+
+# Frontend tests  
+npm run test:frontend
+
+# Integration tests
+npm run test:integration
+```
+
+## 🚀 **Deployment**
+
+### **Production Build**
+```bash
+npm run build
+```
+
+### **Docker Production**
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+## 🤝 **Contributing**
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push to branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+## 📄 **License**
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👥 **Team**
+
+- **TaskFlow Team** - Initial work
+
+## 🙏 **Acknowledgments**
+
+- React team for the amazing framework
+- Express.js community for the robust backend framework
+- PostgreSQL for the reliable database
+- All open source contributors
+
+---
+
+<div align="center">
+  <p>Made with ❤️ by TaskFlow Team</p>
+  <p>
+    <a href="https://github.com/trung157/task-management/issues">Report Bug</a> •
+    <a href="https://github.com/trung157/task-management/issues">Request Feature</a>
+  </p>
+</div>
 - **Progressive Enhancement**: Works without JavaScript
 
 ### **Component Structure**
