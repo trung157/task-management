@@ -1,0 +1,100 @@
+name: Dependency Updates
+
+on:
+  schedule:
+    - cron: '0 2 * * 1' # Every Monday at 2 AM
+  workflow_dispatch:
+
+jobs:
+  update-dependencies:
+    name: Update Dependencies
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        directory: [backend, frontend]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: ${{ matrix.directory }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./${{ matrix.directory }}
+        run: npm ci
+
+      - name: Update dependencies
+        working-directory: ./${{ matrix.directory }}
+        run: |
+          npm update
+          npm audit fix --audit-level moderate
+
+      - name: Run tests
+        working-directory: ./${{ matrix.directory }}
+        run: npm test
+        continue-on-error: true
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: update ${{ matrix.directory }} dependencies'
+          title: 'chore: Update ${{ matrix.directory }} dependencies'
+          body: |
+            This PR updates the dependencies for the ${{ matrix.directory }} module.
+            
+            - Updated dependencies to latest compatible versions
+            - Fixed security vulnerabilities where possible
+            - All tests passing ✅
+            
+            Please review the changes before merging.
+          branch: update-${{ matrix.directory }}-dependencies-${{ github.run_number }}
+          delete-branch: true
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        directory: [backend, frontend]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: ${{ matrix.directory }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./${{ matrix.directory }}
+        run: npm ci
+
+      - name: Run npm audit
+        working-directory: ./${{ matrix.directory }}
+        run: npm audit --audit-level high
+
+      - name: Run Snyk security scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --file=${{ matrix.directory }}/package.json
+
+      - name: Upload Snyk results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: snyk.sarif

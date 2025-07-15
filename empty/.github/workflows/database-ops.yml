@@ -1,0 +1,190 @@
+name: Database Operations
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: 'Database operation to perform'
+        required: true
+        default: 'migrate'
+        type: choice
+        options:
+        - migrate
+        - backup
+        - restore
+        - seed
+      environment:
+        description: 'Environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+
+jobs:
+  database-migrate:
+    name: Database Migration
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.operation == 'migrate' }}
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run migrations
+        working-directory: ./backend
+        env:
+          NODE_ENV: ${{ github.event.inputs.environment }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+        run: |
+          npm run migrate
+
+      - name: Verify migration
+        working-directory: ./backend
+        env:
+          NODE_ENV: ${{ github.event.inputs.environment }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+        run: |
+          npm run migrate:status
+
+  database-backup:
+    name: Database Backup
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.operation == 'backup' }}
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Create backup
+        env:
+          PGPASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          BACKUP_FILE="taskflow_backup_$(date +%Y%m%d_%H%M%S).sql"
+          pg_dump -h ${{ secrets.DB_HOST }} \
+                  -p ${{ secrets.DB_PORT }} \
+                  -U ${{ secrets.DB_USER }} \
+                  -d ${{ secrets.DB_DATABASE }} \
+                  --verbose \
+                  --clean \
+                  --no-owner \
+                  --no-privileges \
+                  > $BACKUP_FILE
+
+      - name: Upload backup to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          pip install awscli
+          BACKUP_FILE="taskflow_backup_$(date +%Y%m%d_%H%M%S).sql"
+          aws s3 cp $BACKUP_FILE s3://${{ secrets.BACKUP_S3_BUCKET }}/${{ github.event.inputs.environment }}/
+
+      - name: Cleanup local backup
+        run: |
+          rm -f *.sql
+
+  database-restore:
+    name: Database Restore
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.operation == 'restore' }}
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: List available backups
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          pip install awscli
+          echo "Available backups:"
+          aws s3 ls s3://${{ secrets.BACKUP_S3_BUCKET }}/${{ github.event.inputs.environment }}/
+
+      - name: Download latest backup
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          LATEST_BACKUP=$(aws s3 ls s3://${{ secrets.BACKUP_S3_BUCKET }}/${{ github.event.inputs.environment }}/ --recursive | sort | tail -n 1 | awk '{print $4}')
+          aws s3 cp s3://${{ secrets.BACKUP_S3_BUCKET }}/$LATEST_BACKUP restore.sql
+
+      - name: Restore database
+        env:
+          PGPASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          psql -h ${{ secrets.DB_HOST }} \
+               -p ${{ secrets.DB_PORT }} \
+               -U ${{ secrets.DB_USER }} \
+               -d ${{ secrets.DB_DATABASE }} \
+               -f restore.sql
+
+  database-seed:
+    name: Database Seed
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.operation == 'seed' }}
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run database seeding
+        working-directory: ./backend
+        env:
+          NODE_ENV: ${{ github.event.inputs.environment }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+        run: |
+          npm run seed

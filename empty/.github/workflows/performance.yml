@@ -1,0 +1,192 @@
+name: Performance Testing
+
+on:
+  schedule:
+    - cron: '0 1 * * *' # Daily at 1 AM
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+
+jobs:
+  performance-test:
+    name: Performance Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_USER: test_user
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 3s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Build backend
+        working-directory: ./backend
+        run: npm run build
+
+      - name: Start backend server
+        working-directory: ./backend
+        env:
+          NODE_ENV: test
+          PORT: 3000
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: test_user
+          DB_PASSWORD: test_password
+          DB_DATABASE: test_db
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_SECRET: test_jwt_secret
+          JWT_REFRESH_SECRET: test_jwt_refresh_secret
+        run: |
+          npm start &
+          sleep 30
+
+      - name: Install Artillery
+        run: npm install -g artillery@latest
+
+      - name: Run API Performance Tests
+        run: |
+          cat > artillery-config.yml << EOF
+          config:
+            target: 'http://localhost:3000'
+            phases:
+              - duration: 60
+                arrivalRate: 10
+              - duration: 120
+                arrivalRate: 20
+              - duration: 60
+                arrivalRate: 5
+          scenarios:
+            - name: "API Health Check"
+              flow:
+                - get:
+                    url: "/api/health"
+            - name: "User Registration and Login"
+              flow:
+                - post:
+                    url: "/api/auth/register"
+                    json:
+                      email: "test-{{ \$randomString() }}@example.com"
+                      password: "TestPassword123!"
+                      name: "Test User"
+                - post:
+                    url: "/api/auth/login"
+                    json:
+                      email: "test@example.com"
+                      password: "TestPassword123!"
+            - name: "Task Operations"
+              flow:
+                - post:
+                    url: "/api/auth/login"
+                    json:
+                      email: "test@example.com"
+                      password: "TestPassword123!"
+                    capture:
+                      - json: "$.token"
+                        as: "token"
+                - get:
+                    url: "/api/tasks"
+                    headers:
+                      Authorization: "Bearer {{ token }}"
+                - post:
+                    url: "/api/tasks"
+                    headers:
+                      Authorization: "Bearer {{ token }}"
+                    json:
+                      title: "Performance Test Task"
+                      description: "Created during performance testing"
+                      priority: "medium"
+                      status: "pending"
+          EOF
+          artillery run artillery-config.yml --output performance-report.json
+
+      - name: Generate Performance Report
+        run: |
+          artillery report performance-report.json --output performance-report.html
+
+      - name: Upload Performance Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-results
+          path: |
+            performance-report.json
+            performance-report.html
+
+  lighthouse-test:
+    name: Lighthouse Performance Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build:production
+
+      - name: Serve frontend
+        working-directory: ./frontend
+        run: |
+          npm install -g serve
+          serve -s dist -l 8080 &
+          sleep 10
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          configPath: './lighthouserc.json'
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: Upload Lighthouse Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: lighthouse-results
+          path: .lighthouseci/

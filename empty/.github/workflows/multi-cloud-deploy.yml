@@ -1,0 +1,243 @@
+name: Multi-Cloud Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+      cloud_provider:
+        description: 'Cloud provider'
+        required: true
+        default: 'aws'
+        type: choice
+        options:
+        - aws
+        - azure
+        - gcp
+        - docker-swarm
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  deploy-aws:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.cloud_provider == 'aws' }}
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Update ECS task definition
+        run: |
+          # Replace placeholders in task definition
+          sed -i "s/ACCOUNT_ID/${{ secrets.AWS_ACCOUNT_ID }}/g" .aws/task-definition.json
+          sed -i "s/YOUR_USERNAME/${{ github.repository_owner }}/g" .aws/task-definition.json
+          sed -i "s/YOUR_REPO/${{ github.event.repository.name }}/g" .aws/task-definition.json
+
+      - name: Deploy to Amazon ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: .aws/task-definition.json
+          service: taskflow-${{ github.event.inputs.environment }}
+          cluster: taskflow-cluster
+          wait-for-service-stability: true
+
+      - name: Deploy frontend to S3 and CloudFront
+        run: |
+          # Build frontend
+          cd frontend
+          npm ci
+          npm run build:${{ github.event.inputs.environment }}
+          
+          # Deploy to S3
+          aws s3 sync dist/ s3://${{ secrets.AWS_S3_BUCKET_PREFIX }}-${{ github.event.inputs.environment }} --delete
+          
+          # Invalidate CloudFront
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
+  deploy-azure:
+    name: Deploy to Azure
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.cloud_provider == 'azure' }}
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Container Instances
+        uses: azure/aci-deploy@v1
+        with:
+          resource-group: ${{ secrets.AZURE_RG }}
+          dns-name-label: taskflow-${{ github.event.inputs.environment }}-${{ github.run_number }}
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest
+          registry-login-server: ${{ env.REGISTRY }}
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
+          name: taskflow-${{ github.event.inputs.environment }}
+          location: 'East US'
+          cpu: 1
+          memory: 2
+          environment-variables: |
+            NODE_ENV=${{ github.event.inputs.environment }}
+            DB_HOST=${{ secrets.AZURE_DB_HOST }}
+            DB_USER=${{ secrets.AZURE_DB_USER }}
+            DB_PASSWORD=${{ secrets.AZURE_DB_PASSWORD }}
+            DB_DATABASE=${{ secrets.AZURE_DB_DATABASE }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
+
+      - name: Deploy frontend to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "frontend"
+          api_location: ""
+          output_location: "dist"
+          app_build_command: npm run build:${{ github.event.inputs.environment }}
+
+  deploy-gcp:
+    name: Deploy to Google Cloud Platform
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.cloud_provider == 'gcp' }}
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker
+
+      - name: Build and push to Google Container Registry
+        run: |
+          # Backend
+          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/taskflow-backend:latest ./backend
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/taskflow-backend:latest
+          
+          # Frontend
+          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/taskflow-frontend:latest ./frontend
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/taskflow-frontend:latest
+
+      - name: Deploy to Google Cloud Run
+        run: |
+          gcloud run deploy taskflow-backend-${{ github.event.inputs.environment }} \
+            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/taskflow-backend:latest \
+            --platform managed \
+            --region us-central1 \
+            --allow-unauthenticated \
+            --set-env-vars NODE_ENV=${{ github.event.inputs.environment }} \
+            --set-env-vars DB_HOST=${{ secrets.GCP_DB_HOST }} \
+            --set-env-vars DB_USER=${{ secrets.GCP_DB_USER }} \
+            --set-env-vars DB_PASSWORD=${{ secrets.GCP_DB_PASSWORD }} \
+            --set-env-vars DB_DATABASE=${{ secrets.GCP_DB_DATABASE }} \
+            --set-env-vars JWT_SECRET=${{ secrets.JWT_SECRET }} \
+            --set-env-vars JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
+
+  deploy-docker-swarm:
+    name: Deploy to Docker Swarm
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.cloud_provider == 'docker-swarm' }}
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.DOCKER_SWARM_SSH_KEY }}
+
+      - name: Deploy to Docker Swarm
+        run: |
+          # Copy docker-compose files to swarm manager
+          scp -o StrictHostKeyChecking=no docker-compose.yml ${{ secrets.DOCKER_SWARM_USER }}@${{ secrets.DOCKER_SWARM_HOST }}:/tmp/
+          
+          # Deploy stack
+          ssh -o StrictHostKeyChecking=no ${{ secrets.DOCKER_SWARM_USER }}@${{ secrets.DOCKER_SWARM_HOST }} << 'EOF'
+            cd /tmp
+            export ENV=${{ github.event.inputs.environment }}
+            docker stack deploy -c docker-compose.yml taskflow-${{ github.event.inputs.environment }}
+          EOF
+
+  health-check:
+    name: Post-Deployment Health Check
+    needs: [deploy-aws, deploy-azure, deploy-gcp, deploy-docker-swarm]
+    runs-on: ubuntu-latest
+    if: always() && (needs.deploy-aws.result == 'success' || needs.deploy-azure.result == 'success' || needs.deploy-gcp.result == 'success' || needs.deploy-docker-swarm.result == 'success')
+
+    steps:
+      - name: Wait for deployment
+        run: sleep 60
+
+      - name: Health check
+        run: |
+          # Determine the health check URL based on cloud provider
+          case "${{ github.event.inputs.cloud_provider }}" in
+            "aws")
+              HEALTH_URL="${{ secrets.AWS_HEALTH_URL }}"
+              ;;
+            "azure")
+              HEALTH_URL="${{ secrets.AZURE_HEALTH_URL }}"
+              ;;
+            "gcp")
+              HEALTH_URL="${{ secrets.GCP_HEALTH_URL }}"
+              ;;
+            "docker-swarm")
+              HEALTH_URL="${{ secrets.DOCKER_SWARM_HEALTH_URL }}"
+              ;;
+          esac
+          
+          # Perform health check
+          for i in {1..5}; do
+            if curl -f "$HEALTH_URL/api/health"; then
+              echo "Health check passed!"
+              exit 0
+            fi
+            echo "Health check failed, retrying in 30 seconds..."
+            sleep 30
+          done
+          echo "Health check failed after 5 attempts"
+          exit 1
+
+      - name: Run smoke tests
+        run: |
+          # Install dependencies for smoke tests
+          npm install -g newman
+          
+          # Run basic API tests
+          newman run .github/workflows/smoke-tests.postman_collection.json \
+            --environment .github/workflows/smoke-tests.${{ github.event.inputs.environment }}.postman_environment.json
