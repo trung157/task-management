@@ -1,23 +1,6 @@
 # 🚀 TaskFlow - Full-Stack Task Management System
 
-<## 🚀 **Quick Start**
-
-### Step 1: Check System Requirements
-
-Before starting, run the requirements check script:
-
-```bash
-# Windows
-check-requirements.bat
-
-# Linux/macOS  
-chmod +x check-requirements.sh
-./check-requirements.sh
-```
-
-This will verify that you have all necessary tools installed.
-
-### Step 2: Prerequisites align="center">
+<div align="center">
   
   **A modern, scalable task management platform built with React, Node.js, TypeScript, and PostgreSQL**
   
@@ -28,6 +11,16 @@ This will verify that you have all necessary tools installed.
   [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://docker.com/)
   [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 </div>
+
+## 📚 Documentation
+
+| 📖 Guide | 🎯 Purpose | ⏱️ Time |
+|----------|------------|---------|
+| [⚡ QUICK_START.md](./QUICK_START.md) | TL;DR - Setup trong < 5 phút | 5 min |
+| [📖 SETUP_GUIDE.md](./SETUP_GUIDE.md) | Hướng dẫn chi tiết từng bước | 15 min |
+| [✅ SETUP_CHECKLIST.md](./SETUP_CHECKLIST.md) | Checklist đảm bảo không sót bước | 10 min |
+| [🔧 Backend README](./backend/README.md) | API documentation & setup | 10 min |
+| [🎨 Frontend README](./frontend/README.md) | UI components & development | 10 min |
 
 ## �️ **Project Structure**
 
@@ -69,15 +62,34 @@ task-management/
 - **Email Notifications**: Automated task reminders
 - **API Versioning**: Future-proof API design
 
-## � **Quick Start**
+## 🚀 **Quick Start**
+
+> 📖 **For detailed step-by-step instructions, see [SETUP_GUIDE.md](./SETUP_GUIDE.md)**
+
+### Prerequisites Check
+```bash
+# Windows
+check-requirements.bat
+
+# Linux/macOS
+chmod +x check-requirements.sh
+./check-requirements.sh
+```
+
+### 🎯 **One-Click Setup**
+```bash
+# Windows
+quick-start.bat
+
+# Linux/macOS
+chmod +x quick-start.sh
+./quick-start.sh
+```
 
 ### Prerequisites
 - **Node.js** 18.0.0 or higher ([Download here](https://nodejs.org/))
-- **PostgreSQL** 15 or higher
-- **Redis** (for caching)
+- **PostgreSQL** 15 or higher (for local development)
 - **Docker** (optional, for containerized setup)
-
-> ⚠️ **Important**: If you get "npm is not recognized" error, please follow the [Installation Guide](./INSTALL.md) first.
 
 ### 🐳 **Docker Setup (Recommended)**
 
