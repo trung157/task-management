@@ -19,6 +19,7 @@ interface TaskListProps {
   loading?: boolean
   error?: string | null
   onTaskUpdate?: (task: Task) => void
+  onStatusToggle?: (task: Task) => void
   onTaskDelete?: (taskId: string) => void
   onTaskClick?: (task: Task) => void
   enableFiltering?: boolean
@@ -35,6 +36,7 @@ export default function TaskList({
   loading = false,
   error = null,
   onTaskUpdate,
+  onStatusToggle,
   onTaskDelete,
   onTaskClick,
   enableFiltering = true,
@@ -335,6 +337,7 @@ export default function TaskList({
               task={task}
               onClick={onTaskClick}
               onUpdate={onTaskUpdate}
+              onStatusToggle={onStatusToggle}
               onDelete={onTaskDelete}
               compact={compact}
               showCategory={true}

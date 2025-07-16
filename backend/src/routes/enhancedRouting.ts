@@ -85,7 +85,7 @@ const defaultConfig: RoutingConfig = {
   security: {
     cors: {
       enabled: true,
-      origins: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+      origins: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173'],
       credentials: true
     },
     rateLimiting: {

@@ -7,6 +7,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError, ErrorContext, ErrorFactory } from './enhancedErrorHandler';
 import { logger } from '../utils/logger';
 import { performanceMonitor } from '../services/performanceMonitor';
+import '../types/express'; // Import type extensions
 
 // =====================================================
 // ERROR RECOVERY MECHANISMS
@@ -257,8 +258,8 @@ export const enhancedErrorHandler = (
   // Create error context
   const context: ErrorContext = {
     requestId,
-    userId: req.user?.id,
-    userEmail: req.user?.email,
+    userId: (req as any).user?.id,
+    userEmail: (req as any).user?.email,
     method: req.method,
     url: req.originalUrl,
     ip: req.ip || req.connection.remoteAddress || 'unknown',
@@ -288,7 +289,7 @@ export const enhancedErrorHandler = (
     method: req.method,
     duration: Date.now() - (req as any).startTime,
     statusCode: appError.statusCode,
-    userId: req.user?.id,
+    userId: (req as any).user?.id,
   });
 
   // Determine if we should include sensitive information
@@ -625,7 +626,7 @@ function shouldIncludeErrorDetails(req: Request, error: AppError): boolean {
   if (process.env.NODE_ENV === 'development') return true;
 
   // Include details for admin users
-  if (req.user?.role === 'admin' || req.user?.role === 'super_admin') return true;
+  if ((req as any).user?.role === 'admin' || (req as any).user?.role === 'super_admin') return true;
 
   // Include details for internal errors (but sanitized)
   if (error.statusCode >= 500) return false;
@@ -671,7 +672,7 @@ export const errorMonitoringMiddleware = (
       method: req.method,
       duration,
       statusCode,
-      userId: req.user?.id,
+      userId: (req as any).user?.id,
     });
 
     return originalSend.call(this, data);

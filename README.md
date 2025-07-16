@@ -66,6 +66,13 @@ task-management/
 
 > 📖 **For detailed step-by-step instructions, see [SETUP_GUIDE.md](./SETUP_GUIDE.md)**
 
+### ⚠️ **Important: Environment Files**
+```bash
+# Auto-setup environment files
+setup-env.bat        # Windows
+./setup-env.sh       # Linux/macOS
+```
+
 ### Prerequisites Check
 ```bash
 # Windows
@@ -121,8 +128,8 @@ chmod +x quick-start.sh
 
 4. **Access the Application**
    - Frontend: http://localhost:8080
-   - Backend API: http://localhost:3000
-   - API Documentation: http://localhost:3000/docs
+   - Backend API: http://localhost:5000
+   - API Documentation: http://localhost:5000/docs
 
 ### 💻 **Local Development Setup**
 

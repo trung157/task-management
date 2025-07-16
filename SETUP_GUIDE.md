@@ -36,24 +36,29 @@ cd task-management
 ```bash
 # Windows
 copy "backend\.env.example" "backend\.env"
+copy "frontend\.env.example" "frontend\.env"
 
 # Linux/macOS
 cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 ```
 
-### Bước 3: Chỉnh Sửa File .env (Backend)
+### Bước 3: Chỉnh Sửa File .env (QUAN TRỌNG!)
+
+**⚠️ Lưu ý: File .env đã được tạo sẵn với cấu hình mặc định. Bạn CẦN cập nhật password database:**
+
 Mở file `backend/.env` và cập nhật:
 ```bash
-# Database Configuration
+# Database Configuration (CẬP NHẬT MẬT KHẨU!)
 DB_HOST=postgres
 DB_PORT=5432
 DB_NAME=taskflow_db
 DB_USER=taskflow_user
-DB_PASSWORD=your_secure_password
+DB_PASSWORD=your_actual_postgres_password_here
 
-# JWT Configuration  
-JWT_SECRET=your_super_secret_jwt_key_here
-JWT_REFRESH_SECRET=your_super_secret_refresh_key_here
+# JWT đã được cấu hình sẵn cho development
+JWT_SECRET=taskflow_super_secret_jwt_key_for_development_only_32chars_minimum
+JWT_REFRESH_SECRET=taskflow_super_secret_refresh_key_for_development_only_32chars_minimum
 
 # Server Configuration
 NODE_ENV=development

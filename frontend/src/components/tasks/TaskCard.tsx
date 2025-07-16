@@ -5,6 +5,7 @@ interface TaskCardProps {
   task: Task
   onClick?: (task: Task) => void
   onUpdate?: (task: Task) => void
+  onStatusToggle?: (task: Task) => void
   onDelete?: (taskId: string) => void
   compact?: boolean
   showCategory?: boolean
@@ -16,6 +17,7 @@ export default function TaskCard({
   task,
   onClick,
   onUpdate,
+  onStatusToggle,
   onDelete,
   compact = false,
   showCategory = true,
@@ -56,9 +58,9 @@ export default function TaskCard({
 
   const handleStatusToggle = (e: React.MouseEvent) => {
     e.stopPropagation()
-    if (onUpdate) {
+    if (onStatusToggle) {
       const newStatus = task.status === TaskStatus.COMPLETED ? TaskStatus.PENDING : TaskStatus.COMPLETED
-      onUpdate({ ...task, status: newStatus })
+      onStatusToggle({ ...task, status: newStatus })
     }
   }
 

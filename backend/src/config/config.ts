@@ -161,7 +161,7 @@ const config: Config = {
     name: 'TaskFlow API',
     version: '1.0.0',
     description: 'Task Management System API',
-    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
   },
 
   server: {
@@ -170,7 +170,7 @@ const config: Config = {
     env: process.env.NODE_ENV || 'development',
     apiVersion: process.env.API_VERSION || 'v1',
     apiPrefix: process.env.API_PREFIX || '/api',
-    corsOrigin: parseArray(process.env.ALLOWED_ORIGINS, ['http://localhost:3000', 'http://localhost:5173']),
+    corsOrigin: parseArray(process.env.ALLOWED_ORIGINS, ['http://localhost:5173', 'http://localhost:8080']),
     trustProxy: parseBoolean(process.env.TRUST_PROXY),
     forceHttps: parseBoolean(process.env.FORCE_HTTPS),
     secureCookies: parseBoolean(process.env.SECURE_COOKIES),
@@ -313,8 +313,10 @@ validateConfig();
 
 // Log configuration warnings
 if (config.server.env === 'development') {
-  if (!config.email.enabled) {
+  if (!config.email.enabled && !config.email.mockInDev) {
     console.warn('⚠️  WARNING: Email configuration not found. Email features will be disabled.');
+  } else if (config.email.enabled && config.email.mockInDev) {
+    console.info('📧 Email features enabled with mock mode for development.');
   }
 }
 

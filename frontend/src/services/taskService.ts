@@ -1,11 +1,15 @@
 import { ApiResponse, Task, CreateTaskRequest, UpdateTaskRequest, TaskFilters, TasksResponse } from '../types'
 
-const API_BASE_URL = 'http://localhost:3001/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 class TaskService {
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`
-    const token = localStorage.getItem('auth_token')
+    
+    // Try to get token from both possible storage keys and locations
+    const token = localStorage.getItem('auth_access_token') || 
+                 sessionStorage.getItem('auth_access_token') ||
+                 localStorage.getItem('auth_token')
     
     const response = await fetch(url, {
       headers: {

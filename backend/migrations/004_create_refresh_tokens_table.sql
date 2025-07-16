@@ -33,7 +33,7 @@ CREATE INDEX IF NOT EXISTS idx_refresh_tokens_revoked ON refresh_tokens(revoked,
 
 -- Partial index for active tokens
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_active ON refresh_tokens(user_id, expires_at DESC) 
-    WHERE revoked = FALSE AND expires_at > NOW();
+    WHERE revoked = FALSE AND expires_at IS NOT NULL;
 
 -- Add comments
 COMMENT ON TABLE refresh_tokens IS 'Refresh tokens for JWT authentication';

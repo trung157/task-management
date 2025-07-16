@@ -198,10 +198,12 @@ async function startServer(): Promise<void> {
   }
 }
 
-// Start the server if this file is run directly
-if (require.main === module) {
-  startServer();
-}
+// Start the server unconditionally for now
+console.log('� Starting TaskFlow server...');
+startServer().catch(error => {
+  console.error('💥 Failed to start server:', error);
+  process.exit(1);
+});
 
 export default app;
 export { app, startServer };

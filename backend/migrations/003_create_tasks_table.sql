@@ -99,7 +99,7 @@ CREATE INDEX IF NOT EXISTS idx_tasks_user_category_status ON tasks(user_id, cate
     WHERE deleted_at IS NULL;
 
 CREATE INDEX IF NOT EXISTS idx_tasks_overdue ON tasks(user_id, due_date) 
-    WHERE deleted_at IS NULL AND status != 'completed' AND due_date < NOW();
+    WHERE deleted_at IS NULL AND status != 'completed' AND due_date IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_tasks_search_vector ON tasks USING gin(search_vector);
 

@@ -80,7 +80,7 @@ echo docker-compose up -d
 echo.
 echo Access your application:
 echo - Frontend: http://localhost:5173
-echo - Backend API: http://localhost:3000
-echo - API Docs: http://localhost:3000/docs
+echo - Backend API: http://localhost:5000
+echo - API Docs: http://localhost:5000/docs
 
 pause

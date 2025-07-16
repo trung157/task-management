@@ -101,8 +101,8 @@ SESSION_SECRET=${answers.sessionSecret}
 # ====================
 # CORS & CLIENT CONFIGURATION
 # ====================
-FRONTEND_URL=${answers.frontendUrl || 'http://localhost:3000'}
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000
+FRONTEND_URL=${answers.frontendUrl || 'http://localhost:5173'}
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:8080,http://127.0.0.1:5173
 
 # ====================
 # RATE LIMITING
@@ -187,7 +187,7 @@ async function interactiveSetup(): Promise<void> {
   
   // Server
   answers.port = await ask('Server port [5000]: ') || '5000';
-  answers.frontendUrl = await ask('Frontend URL [http://localhost:3000]: ') || 'http://localhost:3000';
+  answers.frontendUrl = await ask('Frontend URL [http://localhost:5173]: ') || 'http://localhost:5173';
 
   // Database
   log.info('\nDatabase Configuration:');

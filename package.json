@@ -46,5 +46,9 @@
     "fullstack"
   ],
   "author": "TaskFlow Team",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/server-filesystem": "^2025.7.1",
+    "@modelcontextprotocol/server-github": "^2025.4.8"
+  }
 }

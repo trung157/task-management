@@ -84,7 +84,7 @@ CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
 CREATE INDEX IF NOT EXISTS idx_users_last_login ON users(last_login_at DESC);
 CREATE INDEX IF NOT EXISTS idx_users_deleted_at ON users(deleted_at) WHERE deleted_at IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_users_email_verified ON users(email_verified) WHERE email_verified = false;
-CREATE INDEX IF NOT EXISTS idx_users_locked ON users(locked_until) WHERE locked_until > NOW();
+CREATE INDEX IF NOT EXISTS idx_users_locked ON users(locked_until) WHERE locked_until IS NOT NULL;
 
 -- Create composite indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_users_active_lookup ON users(status, role, deleted_at) 
